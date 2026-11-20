@@ -43,6 +43,8 @@ mdm-engine.workspace = true
 mdm-extract.workspace = true
 mdm-geo.workspace = true
 mdm-ipc.workspace = true
+# The push listener (#1512): a browser userscript's pushed downloads arrive on 127.0.0.1.
+mdm-push.workspace = true
 # The remote control (#141): a paired phone adds and controls downloads over the local network.
 mdm-remote.workspace = true
 mdm-tools.workspace = true

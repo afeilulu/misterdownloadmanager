@@ -6,6 +6,10 @@
 #. never shown for a single file
 #. {n} = a number (keep the braces as they are)
 @plural	Also delete the {n} file from disk|Also delete the {n} files from disk	Also delete the {n} file from disk|Also delete the {n} files from disk
+#. count in push.rs
+#. Push window: a push whose web site neither the browser nor the push itself names
+#. {n} = a number (keep the braces as they are)
+@plural	An unknown site wants to push {n} download to MDM.|An unknown site wants to push {n} downloads to MDM.	An unknown site wants to push {n} download to MDM.|An unknown site wants to push {n} downloads to MDM.
 #. count in cnl.rs
 #. Click'n'Load window: a page whose web site the browser doesn't name, so MDM can't tell which site it is
 #. {n} = a number (keep the braces as they are)
@@ -122,6 +126,10 @@
 #. where a magnet's peers came from: {n} = trackers asked; {peers} = "3 peers"
 #. {n} = a number (keep the braces as they are)
 @plural	{n} tracker: {peers}|{n} trackers: {peers}	{n} tracker: {peers}|{n} trackers: {peers}
+#. count in push.rs
+#. Push window: {site} is a web site's name such as "example.com"
+#. {site} = a web site's name such as "example.com"; {n} = a number (keep the braces as they are)
+@plural	{site} wants to push {n} download to MDM.|{site} wants to push {n} downloads to MDM.	{site} wants to push {n} download to MDM.|{site} wants to push {n} downloads to MDM.
 #. count in cnl.rs
 #. Click'n'Load window: {site} is a web site's name such as "example.com"
 #. {site} = a web site's name such as "example.com"; {n} = a number (keep the braces as they are)
@@ -219,6 +227,9 @@
 #. text in whereis.rs
 #. the tooltip of where a download's server is, when a proxy carries the download
 	A proxy carries this download: the place and the time are the proxy's, not the server's.	A proxy carries this download: the place and the time are the proxy's, not the server's.
+#. text in the Options window
+#. Options → Push: what an arriving push does
+	A pushed download opens the "Download File Info" dialog first, unless the push asks to start at once. The first push from a site asks whether to allow it.	A pushed download opens the "Download File Info" dialog first, unless the push asks to start at once. The first push from a site asks whether to allow it.
 #. text in crashui.rs
 #. crash report window: what the report is and what Send does
 	A report was saved. Sending it to the developers on GitHub helps them fix this; you can read everything it holds below first. Nothing is sent by itself: Send opens the report form in your browser, filled in, for you to check and submit.	A report was saved. Sending it to the developers on GitHub helps them fix this; you can read everything it holds below first. Nothing is sent by itself: Send opens the report form in your browser, filled in, for you to check and submit.
@@ -252,6 +263,9 @@
 #. text in the Options window
 #. Options → Archives → Link grabber check box: Click'n'Load, a link site's button that sends its links to a program on this computer (port 9666, as JDownloader)
 	Accept Click'n'Load from web pages (port 9666)	Accept Click'n'Load from web pages (port 9666)
+#. checkbox in the Options window
+#. Options → Push check box (off by default)
+	Accept downloads pushed by browser userscripts	Accept downloads pushed by browser userscripts
 #. checkbox in the Add torrent window
 #. Torrent settings: other peers may connect to this computer
 	Accept incoming connections	Accept incoming connections
@@ -391,13 +405,17 @@
 #. text in the Download video window
 #. in the Subtitles list of Download video: every language the video's uploader gave
 	All the uploader's	All the uploader's
-#. text in cnl.rs
+#. text in cnl.rs; text in push.rs
 #. button in the Click'n'Load window: let this site send links (remembered)
+#. button in the Push window: let this site push downloads (remembered)
 	Allow	Allow
 #. text in the Options window
 #. checkbox under the number of connections per download; {n} is 32
 #. {n} = a number (keep the braces as they are)
 	Allow more than {n} connections	Allow more than {n} connections
+#. text in push.rs
+#. Push window, under the question: what a push carries, and that it may start at once
+	Allow only sites you use. A push carries the site's cookies and headers, and may start its download at once.	Allow only sites you use. A push carries the site's cookies and headers, and may start its download at once.
 #. text in cnl.rs
 #. Click'n'Load window, under the question: nothing happens to the links before the user adds them in Link grabber
 	Allow only sites you use. Nothing is looked up or downloaded before you add it in Link grabber.	Allow only sites you use. Nothing is looked up or downloaded before you add it in Link grabber.
@@ -585,8 +603,9 @@
 #. text in countries.rs
 #. a country's name (where a download's server is)
 	Bhutan	Bhutan
-#. text in cnl.rs
+#. text in cnl.rs; text in push.rs
 #. button in the Click'n'Load window: refuse this site's links (remembered)
+#. button in the Push window: refuse this site's pushes (remembered)
 	Block	Block
 #. text in the Add torrent window
 #. Torrent settings: the address of an IP blocklist (empty: none)
@@ -1815,6 +1834,7 @@
 #. a country's name (where a download's server is)
 	Israel	Israel
 #. text in the Options window
+#. Options → Push → Status: it could not start; {error} = the system's reason
 #. Options → Remote → Status: it could not start; {error} = the system's reason
 #. {error} = an error message (keep the braces as they are)
 	It could not start: {error}	It could not start: {error}
@@ -2528,8 +2548,9 @@
 #. text in the Link grabber window
 #. Link grabber, a link's status: a web page sent it (Click'n'Load), so it isn't looked up (name, size, online) before it is added
 	Not looked up	Not looked up
-#. text in cnl.rs; button in helpers.rs
+#. text in cnl.rs; button in helpers.rs; text in push.rs
 #. button in the Click'n'Load window: refuse these links, ask again next time
+#. button in the Push window: refuse these, ask again next time
 	Not now	Not now
 #. text in helpers.rs
 	Not now? Get them later from Tasks → Download video from a page.	Not now? Get them later from Tasks → Download video from a page.
@@ -2568,6 +2589,9 @@
 #. text in the Options window
 #. Options → Remote → Status: the remote control is off
 	Off: nothing on the network can reach MDM.	Off: nothing on the network can reach MDM.
+#. text in the Options window
+#. Options → Push → Status: off
+	Off: nothing on this computer can reach MDM.	Off: nothing on this computer can reach MDM.
 #. text in rssdlg.rs
 #. RSS feeds window, Download rules: under the rule's feeds; the rule was turned off because every feed it watched was removed
 	Off: the feeds it watched were removed.	Off: the feeds it watched were removed.
@@ -2598,6 +2622,9 @@
 #. text in the Options window
 #. Options → Sites Logins → Cookies for video sites, a Chrome-like browser chosen on Windows
 	On Windows, Chrome, Edge and Brave may lock their cookies. Firefox works.	On Windows, Chrome, Edge and Brave may lock their cookies. Firefox works.
+#. text in the Options window
+#. Options → Push → Status: on; the port is the one above
+	On. A userscript pushes to the port above.	On. A userscript pushes to the port above.
 #. text in the Options window
 #. Options → Remote → Status: on; the address follows in a box below
 	On. On the phone, open this address:	On. On the phone, open this address:
@@ -2798,9 +2825,11 @@
 #. label in the Options window
 	Port	Port
 #. text in the Options window
+#. Options → Push → Status: another program uses the port; {port} = its number
 #. Options → Remote → Status: another program uses the port; {port} = its number
 	Port {port} is used by another program: choose another.	Port {port} is used by another program: choose another.
 #. text in the Options window; text in the Add torrent window
+#. Options → Push: label before the port number box
 #. Options → Remote: label before the port number box
 #. Torrent settings: the port to listen on (empty: any)
 	Port:	Port:
@@ -2849,6 +2878,19 @@
 #. text in countries.rs
 #. a country's name (where a download's server is)
 	Puerto Rico	Puerto Rico
+#. message or event log entry in the main window; text in the Options window; window title in push.rs
+#. title of the notice when the push listener couldn't start
+#. Options page title: downloads pushed by browser userscripts
+#. tab title: downloads pushed by browser userscripts (#1512)
+#. window title: a userscript pushed a download to this program
+	Push	Push
+#. text in push.rs
+#. notice: Push couldn't start; {port} is the port Options names
+	Push can't start: another program is using port {port}. Close it, then turn Push off and on again in Options.	Push can't start: another program is using port {port}. Close it, then turn Push off and on again in Options.
+#. text in push.rs
+#. notice: Push couldn't start; {error} the system's reason
+#. {error} = an error message (keep the braces as they are)
+	Push can't start: {error}	Push can't start: {error}
 #. text in the Batch download window
 #. why Batch download's OK is greyed
 	Put a * in the address where the numbers or letters go	Put a * in the address where the numbers or letters go
@@ -3602,6 +3644,7 @@
 #. a check of Test browser integration: the browsers find MDM's helper program
 	The browsers can find Mister Download Manager	The browsers can find Mister Download Manager
 #. text in the Options window
+#. Options → Push → Status: the settings were changed; they apply on OK
 #. Options → Remote → Status: the settings were changed; they apply on OK
 	The changes apply when you click OK.	The changes apply when you click OK.
 #. message or event log entry in the main window

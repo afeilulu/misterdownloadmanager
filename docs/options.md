@@ -177,6 +177,21 @@ Control MDM from your phone or another computer on the local network: see
 - **Paired devices** — **Pair a device...** shows a QR code and a code; **Remove** unpairs the
   device selected, at once.
 
+## Push
+
+A browser userscript can push a download to MDM with the request headers its site needs (a
+netdisk's User-Agent, Referer and cookies): see [Browser integration → A userscript pushes a
+download](browser-integration.md#a-userscript-pushes-a-download). This page turns the listener
+on and says where it listens.
+
+- **Accept downloads pushed by browser userscripts** (off by default — any program on this
+  computer may post there).
+- **Port** — 16872 by default; the script's settings must name the same one.
+- **Status** — whether the listener is on, or why it couldn't start.
+
+The first push from a site asks whether to allow it (remembered, like Click'n'Load's sites).
+A push opens the Download File Info dialog unless it asks to start at once.
+
 ## Elsewhere
 
 A few settings live outside this window:

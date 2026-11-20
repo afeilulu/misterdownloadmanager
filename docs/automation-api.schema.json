@@ -413,6 +413,23 @@
           "description": "`/exit` (beyond IDM): the running app saves and quits (the installer, before an upgrade\nor an uninstall). Starts nothing when no app runs.",
           "type": "boolean"
         },
+        "extra_headers": {
+          "description": "Extra request headers the address's site needs besides those above (an `Authorization`\nfor a netdisk's download, an app's own `platform`). Sent on every request of the\ndownload, as the others are. A sender may not set the ones the engine makes itself:\n`host`, `content-length`, `content-type`, `transfer-encoding`, `te`, `connection`,\n`upgrade`, `expect`, `range`, `accept-encoding`, the `if-*` validators, `cookie`,\n`referer`, `origin` and `user-agent` (each of those has its own field, or is the\ndownload's own); such names are skipped, an `authorization` or an app's own name\narrives as it is.",
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "type": "array"
+        },
         "final_url": {
           "default": null,
           "description": "From the browser: where its redirects from `url` ended (`url` stays the address asked\nfor, so an expired signed link can be renewed from it).",

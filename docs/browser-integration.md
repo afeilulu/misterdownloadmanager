@@ -224,6 +224,31 @@ If MDM can't be reached at all (it was uninstalled, or the helper isn't register
 ![Options, General with Test browser integration...](images/help/test-integration.webp)
 *Test browser integration... says whether the browser reaches MDM.*
 
+## A userscript pushes a download
+
+A userscript (Tampermonkey and the like) that gets a file's direct address from a netdisk can
+push it to MDM with everything the site asks of a downloader: its User-Agent, the page's
+Referer and the browser's cookies, and any other header the site wants. The script posts one
+JSON line to a small listener on this computer:
+
+```
+POST http://127.0.0.1:16872/ping        → {"ok":true,"app":"mdm","version":"…"}
+POST http://127.0.0.1:16872/push        → {"ok":true}
+{"url":"https://dl.example/file.zip",
+ "name":"file.zip",
+ "referer":"https://pan.example/s/list",
+ "origin":"https://pan.example",
+ "cookies":"a=1; b=2",
+ "user_agent":"…",
+ "extra_headers":[["Authorization","Bearer …"]],
+ "silent":false}
+```
+
+Turn it on in **Options → Push** (off by default, port 16872). The listener takes posts from
+this computer only; a web page can't send one past it (its posts would need a CORS preflight,
+which isn't answered). The first push from a site asks whether to allow it, and a push opens
+the Download File Info dialog unless it says to start at once.
+
 ## Next steps
 
 - [Tutorial: catch downloads from your browser →](guide-catch-browser-downloads.md)

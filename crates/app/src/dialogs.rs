@@ -1408,13 +1408,17 @@ impl FileInfo {
                     self.save_as = self.place.name_in(&dir, &name);
                 }
                 // Another address: the browser's name, size and form are not its own, and on
-                // another site neither are its cookies and page (never sent there).
+                // another site neither are its cookies, page and headers (never sent there).
                 if url.origin() != self.url.origin() {
                     self.context.cookies = None;
                     self.context.referer = None;
                     self.context.page_url = None;
+                    self.context.origin = None;
                     self.request.headers.remove(reqwest::header::COOKIE);
                     self.request.headers.remove(reqwest::header::REFERER);
+                    self.request.headers.remove(reqwest::header::ORIGIN);
+                    crate::push::remove_extra_headers(&mut self.request, &self.context);
+                    self.context.extra_headers = Vec::new();
                 }
                 self.context.name = None;
                 self.context.size = None;

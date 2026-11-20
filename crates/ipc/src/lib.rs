@@ -57,6 +57,16 @@ pub struct Command {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub cookie_jar: Vec<BrowserCookie>,
     pub user_agent: Option<String>,
+    /// Extra request headers the address's site needs besides those above (an `Authorization`
+    /// for a netdisk's download, an app's own `platform`). Sent on every request of the
+    /// download, as the others are. A sender may not set the ones the engine makes itself:
+    /// `host`, `content-length`, `content-type`, `transfer-encoding`, `te`, `connection`,
+    /// `upgrade`, `expect`, `range`, `accept-encoding`, the `if-*` validators, `cookie`,
+    /// `referer`, `origin` and `user-agent` (each of those has its own field, or is the
+    /// download's own); such names are skipped, an `authorization` or an app's own name
+    /// arrives as it is.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub extra_headers: Vec<(String, String)>,
     /// From the browser: where its redirects from `url` ended (`url` stays the address asked
     /// for, so an expired signed link can be renewed from it).
     pub final_url: Option<String>,
@@ -1121,6 +1131,33 @@ mod tests {
         })
         .unwrap();
         assert!(!whole.contains("checksum"), "{whole}");
+    }
+
+    /// An add may carry the site's extra request headers (a netdisk's `Authorization`): they
+    /// travel, and are left out of a line that has none.
+    #[test]
+    fn an_adds_extra_headers_travel_and_are_left_out_when_unset() {
+        let raw: Command = serde_json::from_str(
+            r#"{"url":"https://x.test/a.zip","extra_headers":[["Authorization","Bearer t"],["platform","web"]]}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            raw.extra_headers,
+            vec![
+                ("Authorization".to_owned(), "Bearer t".to_owned()),
+                ("platform".to_owned(), "web".to_owned()),
+            ]
+        );
+        // An older sender's line has no extra headers at all.
+        let old: Command = serde_json::from_str(r#"{"url":"https://x.test/a.zip"}"#).unwrap();
+        assert!(old.extra_headers.is_empty());
+        // Without any, the key is not written (the line stays as it was).
+        let whole = serde_json::to_string(&Command {
+            url: Some("https://x.test/a.zip".into()),
+            ..Default::default()
+        })
+        .unwrap();
+        assert!(!whole.contains("extra_headers"), "{whole}");
     }
 
     #[test]

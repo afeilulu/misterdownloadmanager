@@ -48,6 +48,7 @@ mod palette;
 mod playlistdlg;
 mod progress;
 mod properties;
+mod push;
 mod queue;
 mod quota;
 mod regional;

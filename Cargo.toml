@@ -24,6 +24,7 @@ mdm-geo = { path = "crates/geo" }
 mdm-ipc = { path = "crates/ipc" }
 mdm-labserver = { path = "crates/labserver" }
 mdm-mcp = { path = "crates/mcp" }
+mdm-push = { path = "crates/push" }
 mdm-remote = { path = "crates/remote" }
 mdm-tools = { path = "crates/tools" }
 mdm-torrent = { path = "crates/torrent" }

@@ -391,6 +391,13 @@ pub struct Settings {
     pub cnl_on: bool,
     /// Click'n'Load: the sites asked about, each allowed (true) or blocked, by host.
     pub cnl_sites: Vec<(String, bool)>,
+    /// Push (#1512): a browser userscript's pushed downloads (with the request headers the
+    /// site needs) arrive on 127.0.0.1. Off by default: any local program may post there.
+    pub push_on: bool,
+    /// Push: the port it listens on.
+    pub push_port: u16,
+    /// Push: the sites asked about, each allowed (true) or blocked, by host.
+    pub push_sites: Vec<(String, bool)>,
 }
 
 /// Options → File types defaults (IDM 6.42), shared with the browser host (mdm_ipc::capture).
@@ -561,6 +568,9 @@ impl Default for Settings {
             grabber_hide_pages: true,
             cnl_on: false,
             cnl_sites: Vec::new(),
+            push_on: false,
+            push_port: mdm_push::PORT,
+            push_sites: Vec::new(),
         }
     }
 }

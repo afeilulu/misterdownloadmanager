@@ -725,6 +725,12 @@ These ship in the next version.
 - ✅ The command line's add accepts `--private` (or `-p`) to add downloads flagged as private, and
   the MCP server's add_download tool accepts `private: true` (thanks to
   [@abdul-karim-mia](https://github.com/abdul-karim-mia))
+- ✅ Browser userscripts can push downloads to MDM, with the request headers their site needs: a
+  small listener on this computer (Options → Push, off by default, port 16872) takes a posted
+  address with its User-Agent, Referer, cookies and other headers (an Authorization, an app's
+  own), the way Click'n'Load takes a page's links — asked for per site, limited, this computer
+  only, a web page's own posts refused. An add's extra headers travel the command channel (the
+  automation API's too) and reach the download's every request
 - ✅ The tests run in English whatever Windows' display language is: a Chinese, German or
   Arabic Windows ran 27 of `mdm-app`'s tests red on code CI's English runner passed, as the
   interface language followed the system in tests too

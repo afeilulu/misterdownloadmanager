@@ -34,6 +34,7 @@ pub enum Icon {
     PageRegional,
     PageArchives,
     PageRemote,
+    PagePush,
     /// The first-start helpers window (ours): yt-dlp finds a page's video,
     HelperVideo,
     /// ffmpeg joins its picture and sound,
@@ -145,6 +146,10 @@ impl Icon {
             Icon::PageRemote => {
                 r#"<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>"#
             }
+            // Lucide "arrow-down-to-line" (Options → Push, #1512).
+            Icon::PagePush => {
+                r#"<path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M4 21h16"/>"#
+            }
             // A screen with a play mark.
             Icon::HelperVideo => {
                 r#"<rect x="2" y="4" width="20" height="16" rx="3"/><path d="M10 8.5v7l6-3.5z"/>"#
@@ -189,6 +194,7 @@ impl Icon {
             Icon::PageRegional => ("#2f7fcf", "#3fa864"),
             Icon::PageArchives => ("#c77a12", "#8a5fd0"),
             Icon::PageRemote => ("#3d8ee6", "#5b6fd6"),
+            Icon::PagePush => ("#2bb3a3", "#3fa864"),
             Icon::HelperVideo => ("#df6a9c", "#b07ad9"),
             Icon::HelperMerge => ("#3d8ee6", "#2bb3a3"),
             Icon::HelperChecked => ("#3fa864", "#2f7fcf"),
@@ -220,6 +226,7 @@ impl Icon {
             Icon::PageRegional => "page-regional",
             Icon::PageArchives => "page-archives",
             Icon::PageRemote => "page-remote",
+            Icon::PagePush => "page-push",
             Icon::HelperVideo => "helper-video",
             Icon::HelperMerge => "helper-merge",
             Icon::HelperChecked => "helper-checked",

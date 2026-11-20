@@ -1466,6 +1466,8 @@ pub struct App {
     pub remote_torrents: Vec<crate::remote::Lookup>,
     /// Click'n'Load (#37): what pages post waits here, for its site's answer and Link grabber.
     cnl: crate::cnl::Cnl,
+    /// Push (#1512): what browser userscripts push waits here, for its site's answer.
+    push: crate::push::Inbox,
     /// Free space where downloads go, and when it was last looked up (`free_space`).
     free_space: std::sync::Arc<std::sync::Mutex<(Option<Instant>, Option<u64>)>>,
     /// Options → Proxy / Socks → Network adapter (#35): the watch, the route seen last frame, and
@@ -1921,8 +1923,9 @@ impl App {
         if let Some(d) = downloads {
             self.downloads = d;
         }
-        // Nobody to answer Click'n'Load's question or tick Link grabber's packages.
+        // Nobody to answer Click'n'Load's question, Push's, or tick Link grabber's packages.
         let _ = self.cnl.listen(false);
+        let _ = self.push.listen(false, self.settings.push_port);
         self
     }
 
@@ -2040,6 +2043,14 @@ impl App {
             // i18n: title of the notice when Click'n'Load couldn't start
             app.notice = Some((crate::i18n::mark("Click'n'Load"), why));
         }
+        // Push (#1512): off unless Options → Push turned it on.
+        if let Err(why) = app
+            .push
+            .listen(app.settings.push_on, app.settings.push_port)
+        {
+            // i18n: title of the notice when the push listener couldn't start
+            app.notice = Some((crate::i18n::mark("Push"), why));
+        }
         app.rss = crate::rss::Store::path()
             .map(|p| crate::rss::Store::load(&p))
             .unwrap_or_default();
@@ -2102,6 +2113,8 @@ impl App {
         // Click'n'Load (#37): made here, listening only once `new` starts it (Options →
         // Archives and Link grabber turns it on).
         let cnl = crate::cnl::Cnl::new(rt.clone(), ctx.clone());
+        // Push (#1512): the same, once Options → Push turns it on.
+        let push = crate::push::Inbox::new(rt.clone(), ctx.clone());
         let deferred_torrent_queue: Vec<u64> = items
             .iter()
             .filter(|i| i.status == Status::Complete && i.rename_on_complete.is_some())
@@ -2212,6 +2225,7 @@ impl App {
             remote: None,
             remote_torrents: Vec::new(),
             cnl,
+            push,
             free_space: Default::default(),
             netwatch: Default::default(),
             debrid: Default::default(),
@@ -3797,6 +3811,9 @@ impl App {
                 headers.insert(name, v);
             }
         }
+        // The site's own headers a push brought (`extra_headers`, #1512): an Authorization for
+        // a netdisk's download, an app's own names. The engine's own are not for it to set.
+        crate::push::apply_extra_headers(&mut headers, context);
         // The browser's own User-Agent when it handed the download over, else the one set in
         // Options, else the automatic one (the default browser's, #668).
         let own = self.settings.own_user_agent();
@@ -7617,6 +7634,16 @@ impl App {
             // i18n: title of the notice when Click'n'Load couldn't start
             self.notice = Some((crate::i18n::mark("Click'n'Load"), why));
         }
+        if !self.settings.push_on {
+            self.settings.push_sites.clear();
+        }
+        if let Err(why) = self.push.listen(
+            self.settings.push_on && !self.headless,
+            self.settings.push_port,
+        ) {
+            // i18n: title of the notice when the push listener couldn't start
+            self.notice = Some((crate::i18n::mark("Push"), why));
+        }
         if self.settings.proxy_mode == 2 {
             crate::pacfetch::refresh(&self.settings.proxy_script, &self.rt);
         }
@@ -8328,7 +8355,8 @@ impl App {
                             &self.downloads,
                             self.host_limits.learned(),
                         )
-                        .with_remote(self.remote.clone()),
+                        .with_remote(self.remote.clone())
+                        .with_push(self.push.status()),
                     );
                 } else {
                     dialogs::raise(ctx, dialogs::dialog_viewport("options"));
@@ -11153,6 +11181,19 @@ impl App {
         }
     }
 
+    /// What browser userscripts pushed: an allowed site's pushes as downloads
+    /// (`handle_command`); the others wait for their site's answer (`push.ask`). The window
+    /// comes up for either, once a minute for one site.
+    fn poll_push(&mut self, ctx: &egui::Context) {
+        let (downloads, raise) = self.push.take(&self.settings.push_sites);
+        if raise {
+            self.show_window(ctx);
+        }
+        for cmd in downloads {
+            self.handle_command(cmd, ctx);
+        }
+    }
+
     /// Links to tick before adding (the browser's page links, Import, dropped links): into Link
     /// grabber open already (several dropped lists, a list and links), else a new one; those in
     /// the list already go unticked under "Already in the list" (imported twice, they were
@@ -11731,6 +11772,23 @@ impl App {
             }
             if !links.is_empty() {
                 self.show_import(links, "Click'n'Load".into());
+            }
+        }
+        // Push's question about a site; closing it is "Not now".
+        let answer = self.push.ask.as_mut().and_then(|d| match d.show(ctx) {
+            Outcome::Open => None,
+            Outcome::Closed => Some(crate::push::Answer::NotNow),
+            Outcome::Done(a) => Some(a),
+        });
+        if let Some(answer) = answer {
+            let (downloads, keep) = self.push.answer(answer);
+            if let Some((site, allowed)) = keep {
+                self.settings.push_sites.retain(|(s, _)| *s != site);
+                self.settings.push_sites.push((site, allowed));
+                self.dirty = true;
+            }
+            for cmd in downloads {
+                self.handle_command(cmd, ctx);
             }
         }
         if let Some(d) = &mut self.extracts.needs_7zip
@@ -12810,6 +12868,7 @@ impl App {
         // before, which runs minimized too.
         self.poll_picks(&ctx);
         self.poll_cnl(&ctx);
+        self.poll_push(&ctx);
         self.poll_imports();
         self.drop_target(&ctx);
         self.main_drops(&ctx);

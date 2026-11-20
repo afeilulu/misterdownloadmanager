@@ -63,6 +63,8 @@ enum Sub {
 
 /// Options → Remote's page number (the tabs' numbers).
 const REMOTE_PAGE: usize = 11;
+/// Options → Push (#1512): the listener that takes browser userscripts' pushed downloads.
+const PUSH_PAGE: usize = 12;
 /// Test browser integration: from a check's line to the path under it (#818).
 const DETAIL_H: f32 = 18.0;
 
@@ -227,6 +229,10 @@ pub struct OptionsDialog {
     remote: Option<mdm_remote::Remote>,
     port: String,
     device_rows: winui::RowList,
+    /// Push (#1512): the listener's state as the app had it when the window opened, and the
+    /// port as typed.
+    push: Option<crate::push::Status>,
+    push_port: String,
     /// Sites Logins → Cookies for video sites (#229): the browser in the list (an index into
     /// `mdm_tools::proc::cookie_browsers`), kept while Off is chosen.
     cookie_browser: usize,
@@ -270,6 +276,12 @@ impl OptionsDialog {
     /// With the app's remote control (Remote: its state, devices and pairing).
     pub fn with_remote(mut self, remote: Option<mdm_remote::Remote>) -> Self {
         self.remote = remote;
+        self
+    }
+
+    /// With the push listener's state as it is now (Push's status).
+    pub fn with_push(mut self, status: crate::push::Status) -> Self {
+        self.push = Some(status);
         self
     }
 
@@ -341,6 +353,8 @@ impl OptionsDialog {
             remote: None,
             port: settings.remote_port.to_string(),
             device_rows: Default::default(),
+            push: None,
+            push_port: settings.push_port.to_string(),
             cookie_browser: cookie_browser_at(settings),
             recording_hotkey: false,
             hotkey_taken: false,
@@ -365,7 +379,7 @@ impl OptionsDialog {
             LIGHT_BG(),
             |ui, o| {
                 // Ctrl+Tab through the pages in the tabs' order (Archives, 10, came last).
-                const ORDER: [usize; 12] = [0, 1, 2, 3, 4, 11, 5, 6, 7, 8, 9, 10];
+                const ORDER: [usize; 13] = [0, 1, 2, 3, 4, 11, 5, 6, 7, 8, 9, 10, 12];
                 let at = ORDER.iter().position(|p| *p == self.page).unwrap_or(0);
                 let by_key = winui::tab_keys(ui, ORDER.len(), at).map(|i| ORDER[i]);
                 if let Some(p) = tabs(ui, o, self.page).or(by_key) {
@@ -383,6 +397,7 @@ impl OptionsDialog {
                     9 => self.regional(ui, o),
                     10 => self.archives(ui, o),
                     REMOTE_PAGE => self.remote_page(ui, o),
+                    PUSH_PAGE => self.push_page(ui, o),
                     8 => self.sounds(ui, o),
                     _ => self.regional(ui, o),
                 }
@@ -462,6 +477,7 @@ impl OptionsDialog {
                 s.capture_min_kb = self.min_kb.parse().unwrap_or(0);
                 s.limits_hours = self.hours.parse().unwrap_or(5).max(1);
                 s.remote_port = self.remote_port();
+                s.push_port = self.push_port();
                 Outcome::Done(s)
             }
             Outcome::Closed => Outcome::Closed,
@@ -2948,6 +2964,16 @@ impl OptionsDialog {
             .unwrap_or(self.from.remote_port)
     }
 
+    /// Push's port as typed, or the one saved when it isn't a port MDM takes.
+    fn push_port(&self) -> u16 {
+        self.push_port
+            .trim()
+            .parse::<u16>()
+            .ok()
+            .filter(|p| *p >= 1024)
+            .unwrap_or(self.from.push_port)
+    }
+
     /// The remote control as this draft says (on, address, port).
     fn remote_config(&self) -> mdm_remote::Config {
         let mut s = self.s.clone();
@@ -2964,6 +2990,107 @@ impl OptionsDialog {
             r.start_pairing();
         }
         self.sub = Some(Sub::Pair);
+    }
+
+    /// Push (#1512, ours): the listener browser userscripts push downloads to, with the site's
+    /// cookies and headers; off by default, since any local program may post there.
+    fn push_page(&mut self, ui: &mut Ui, o: Pos2) {
+        let p = ui.painter().clone();
+        // i18n: Options page title: downloads pushed by browser userscripts
+        let title = crate::i18n::mark("Push");
+        let w = winui::text_width_font(&p, winui::tahoma_bold(), title);
+        header(ui, o, Icon::PagePush, title, true, 406.0 - w, 61.0, 406.0);
+        winui::checkbox_light(
+            ui,
+            o + vec2(21.0, 92.0),
+            &mut self.s.push_on,
+            // i18n: Options → Push check box (off by default)
+            "Accept downloads pushed by browser userscripts",
+            true,
+        );
+        let on = self.s.push_on;
+        let color = if on { LIGHT_TEXT() } else { LIGHT_DISABLED() };
+        // i18n: Options → Push: label before the port number box
+        text(&p, o.x + 21.0, o.y + 119.0, crate::i18n::t("Port:"), color);
+        winui::spin_box(
+            ui,
+            r(o, 130.0, 106.0, 80.0, 21.0),
+            &mut self.push_port,
+            1024,
+            65535,
+            on,
+            "opt-push-port",
+        );
+        // What it does now: as saved, or what OK changes.
+        group(ui, o, 16.0, 138.0, 392.0, 64.0, "Status");
+        let changed =
+            self.s.push_on != self.from.push_on || self.push_port() != self.from.push_port;
+        use crate::push::Status as PushStatus;
+        let (line, ok) = if changed {
+            (
+                // i18n: Options → Push → Status: the settings were changed; they apply on OK
+                crate::i18n::t("The changes apply when you click OK.").to_owned(),
+                true,
+            )
+        } else {
+            match self.push.as_ref() {
+                Some(PushStatus::Listening) => (
+                    // i18n: Options → Push → Status: on; the port is the one above
+                    crate::i18n::t("On. A userscript pushes to the port above.").to_owned(),
+                    true,
+                ),
+                Some(PushStatus::PortInUse) => (
+                    crate::i18n::fmt(
+                        // i18n: Options → Push → Status: another program uses the port; {port} = its number
+                        crate::i18n::t("Port {port} is used by another program: choose another."),
+                        &[("port", &self.push_port().to_string())],
+                    ),
+                    false,
+                ),
+                Some(PushStatus::Error(e)) => (
+                    crate::i18n::fmt(
+                        // i18n: Options → Push → Status: it could not start; {error} = the system's reason
+                        crate::i18n::t("It could not start: {error}"),
+                        &[("error", e)],
+                    ),
+                    false,
+                ),
+                _ => (
+                    // i18n: Options → Push → Status: off
+                    crate::i18n::t("Off: nothing on this computer can reach MDM.").to_owned(),
+                    true,
+                ),
+            }
+        };
+        let ink = if ok {
+            LIGHT_TEXT()
+        } else {
+            crate::theme::colors().error_strong
+        };
+        let (rect, cut) = winui::label_into(
+            &p,
+            o.x + 30.0,
+            o.y + 167.0,
+            &line,
+            ink,
+            o.x + 400.0,
+            o.x + 30.0,
+        );
+        if cut {
+            winui::full_on_hover(ui, rect, "opt-push-state", &line);
+        }
+        winui::paragraph(
+            &p,
+            o.x + 21.0,
+            o.y + 216.0,
+            // i18n: Options → Push: what an arriving push does
+            crate::i18n::t(
+                "A pushed download opens the \"Download File Info\" dialog first, unless the push asks to start at once. The first push from a site asks whether to allow it.",
+            ),
+            winui::MUTED(),
+            o.x + 400.0,
+            14.0,
+        );
     }
 
     /// Remote (#141, ours): phones and computers on the local network add and control
@@ -4773,7 +4900,7 @@ fn tabs(ui: &mut Ui, o: Pos2, page: usize) -> Option<usize> {
     // IDM's Dial Up / VPN tab is gone (D-021: no modem support; it did nothing); ours, Regional
     // (how dates and times are written), Accounts (#44, debrid services) and Archives (#37) share
     // the row, sized by their labels.
-    const P: [(usize, &str, f32, f32, f32); 6] = [
+    const P: [(usize, &str, f32, f32, f32); 7] = [
         // i18n: tab title
         (5, crate::i18n::mark("Proxy / Socks"), 8.0, 104.0, 20.0),
         // i18n: tab title: user names and passwords for sites
@@ -4786,6 +4913,8 @@ fn tabs(ui: &mut Ui, o: Pos2, page: usize) -> Option<usize> {
         (9, crate::i18n::mark("Regional"), 336.0, 380.0, 350.0),
         // i18n: tab title: extracting downloaded archives, and Link grabber
         (10, crate::i18n::mark("Archives"), 380.0, 419.0, 390.0),
+        // i18n: tab title: downloads pushed by browser userscripts (#1512)
+        (PUSH_PAGE, crate::i18n::mark("Push"), 380.0, 419.0, 390.0),
     ];
     let p = ui.painter().clone();
     let border = winui::HEADER_LINE();
@@ -4831,7 +4960,7 @@ fn tabs(ui: &mut Ui, o: Pos2, page: usize) -> Option<usize> {
             winui::keep_keys(ui, &resp, true, false, false);
             if resp.has_focus() {
                 // Left / Right (mirrored in RTL), Home / End through the pages in order.
-                const ORDER: [usize; 12] = [0, 1, 2, 3, 4, 11, 5, 6, 7, 8, 9, 10];
+                const ORDER: [usize; 13] = [0, 1, 2, 3, 4, 11, 5, 6, 7, 8, 9, 10, 12];
                 let at = ORDER.iter().position(|p| *p == i).unwrap_or(0) as isize;
                 let fwd = if winui::rtl() { -1 } else { 1 };
                 let to = if winui::take_key(ui, egui::Key::ArrowRight) {
